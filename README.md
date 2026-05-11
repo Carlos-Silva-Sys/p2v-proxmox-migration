@@ -426,5 +426,7 @@ watch -n 10 'kill -USR1 $(pgrep dd)'
 CONTACTO
 ================================================================================
 
-GitHub: Carlos-Silva-Sys
-Correo: carlossilva32d@gmail.com
+## 📝 Autor
+
+Carlos Silva  
+GitHub: [@Carlos-Silva-Sys](https://github.com/Carlos-Silva-Sys)
