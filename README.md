@@ -26,6 +26,7 @@
 | Screen | cualquier | - |
 | dd | cualquier | - |
 
+```
 ## ⚙️ Procedimiento completo
 
 ### 1. En el servidor físico (origen)
