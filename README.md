@@ -1,3 +1,4 @@
+
 ```markdown
 # 🖥️ p2v-proxmox-migration
 
@@ -373,7 +374,21 @@ watch -n 10 'kill -USR1 $(pgrep dd)'
 # (tamaño_actual / velocidad_promedio)
 ```
 
-## 📝 Autor
+================================================================================
 
-Carlos Silva  
-GitHub: [@Carlos-Silva-Sys](https://github.com/Carlos-Silva-Sys)
+## 📞 Contacto
+
+**GitHub:** [Carlos-Silva-Sys](https://github.com/Carlos-Silva-Sys)  
+**Correo:** carlossilva32d@gmail.com
+
+================================================================================
+
+## 📄 Licencia
+
+MIT - Uso libre para fines educativos y profesionales.
+
+================================================================================
+```
+
+
+
