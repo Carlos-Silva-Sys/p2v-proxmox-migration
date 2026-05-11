@@ -30,6 +30,7 @@
 
 ### 1. En el servidor físico (origen)
 
+```bash
 # Montar USB
 mount /dev/sdb1 /mnt/usb
 
