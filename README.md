@@ -108,7 +108,6 @@ apt-get update && apt-get install qemu-guest-agent -y
 systemctl enable qemu-guest-agent --now
 ```
 
-
 ## 👤 Autor
 
 **Carlos Silva**  
