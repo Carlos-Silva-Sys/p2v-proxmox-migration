@@ -94,6 +94,12 @@ dd if=/dev/sda bs=4M of=/mnt/usb/disco_sistema.raw
 watch -n 10 'kill -USR1 $(pgrep dd)'
 ```
 
+**💡 TIP: Si el sistema tiene `pv` instalado** (Pipe Viewer), puedes usarlo para una barra de progreso más visual sin comprimir:
+
+```bash
+dd if=/dev/sda bs=4M | pv > /mnt/usb/disco_sistema.raw
+```
+
 **Tamaño final esperado:** Igual al tamaño del disco origen (ej: 80 GB, 500 GB, etc.)
 **Tiempo estimado:** ~30-50 minutos por cada 100 GB (depende de la velocidad del USB)
 
@@ -160,6 +166,8 @@ umount /mnt/usb_backup
 
 **Opción B: Transferencia por red con netcat (más rápida que scp)**
 
+> ⚠️ **ADVERTENCIA:** `netcat` transmite los datos sin encriptar. Úsalo SOLO en redes de confianza (red local, VPN, etc.). Para Internet o redes inseguras, usa SCP.
+
 ```bash
 # En el nodo Proxmox (receptor)
 screen -S recibir_raw
@@ -173,7 +181,7 @@ nc <IP_DEL_PROXMOX> 9000 < disco_sistema.raw
 # Ctrl+A, D para salir
 ```
 
-**Opción C: SCP (lento pero sencillo)**
+**Opción C: SCP (lento pero seguro y sencillo)**
 
 ```bash
 scp /mnt/usb/disco_sistema.raw root@<IP_PROXMOX>:/var/lib/vz/images/
@@ -418,8 +426,5 @@ watch -n 10 'kill -USR1 $(pgrep dd)'
 CONTACTO
 ================================================================================
 
-GitHub: CarlosSilva32d-blip
+GitHub: Carlos-Silva-Sys
 Correo: carlossilva32d@gmail.com
-
-LICENCIA: Uso libre para fines educativos y profesionales.
-```
