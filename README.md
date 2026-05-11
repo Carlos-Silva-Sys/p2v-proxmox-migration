@@ -1,42 +1,63 @@
 ```markdown
-# p2v-proxmox-migration
+# 🖥️ p2v-proxmox-migration
 
-Migracion de Servidor fisico a Maquina Virtual
+[![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)]()
+[![Proxmox](https://img.shields.io/badge/Proxmox-E57000?style=for-the-badge&logo=proxmox&logoColor=white)]()
+[![Bash](https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnubash&logoColor=white)]()
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)]()
+
+> **Physical to Virtual Migration** - Migración profesional de servidores físicos Linux a máquinas virtuales en Proxmox VE
 
 ```
 P2V MIGRATION - PROXMOX
 Autor: Carlos Silva
 Sistema: Debian / Proxmox VE
+```
 
 ================================================================================
 
-DESCRIPCIÓN
+## 📋 Tabla de Contenidos
+
+- [🎯 Descripción General](#-descripción-general)
+- [📋 Requisitos Previos](#-requisitos-previos)
+- [🖥️ En el Servidor Físico (Origen)](#️-en-el-servidor-físico-origen)
+- [☁️ En el Nodo Proxmox (Destino)](#️-en-el-nodo-proxmox-destino)
+- [🔧 Configuración Post-Migración](#-configuración-post-migración)
+- [🚨 Solución de Problemas](#-solución-de-problemas)
+- [📚 Comandos Rápidos](#-comandos-rápidos)
+- [📞 Contacto](#-contacto)
+
 ================================================================================
+
+## 🎯 Descripción General
 
 Migración de servidor físico Linux a máquina virtual en Proxmox VE (P2V).
-Este procedimiento está optimizado para ser ESTABLE, REANUDABLE (ante cortes de SSH)
-y PROFESIONAL.
+Este procedimiento está optimizado para ser **ESTABLE**, **REANUDABLE** (ante cortes de SSH)
+y **PROFESIONAL**.
 
-ESTRATEGIA PRINCIPAL:
-- Backup SIN compresión (dd directo a RAW) → más estable y rápido
-- Todo comando largo dentro de screen → protegido contra desconexiones
-- Importación directa a QCOW2 con qm importdisk → un solo paso sin conversiones manuales
+**Estrategia principal:**
+
+| Método anterior (dd + gzip) | ✅ Método optimizado |
+|-----------------------------|----------------------|
+| Compresión en caliente falla | Backup SIN compresión (dd directo a RAW) |
+| Si se corta SSH, se pierde el proceso | Todo comando largo dentro de `screen` |
+| Múltiples conversiones manuales | Importación directa a QCOW2 con `qm importdisk` |
 
 ================================================================================
 
-REQUISITOS PREVIOS
-================================================================================
+## 📋 Requisitos Previos
 
 - Servidor físico con Linux (origen)
-- Nodo Proxmox VE (destino)
-- Disco USB con capacidad MAYOR o IGUAL al disco del servidor origen
+- Nodo Proxmox VE 7.x o 8.x (destino)
+- Disco USB con capacidad **MAYOR o IGUAL** al disco del servidor origen
 - Acceso SSH a ambos equipos
 - Conocimientos básicos de Linux y virtualización
 
 ================================================================================
 
-PASO 1: PREPARAR EL USB EN EL SERVIDOR FÍSICO
-================================================================================
+## 🖥️ En el Servidor Físico (Origen)
+
+### 1️⃣ Preparar el USB
 
 Conectar el USB y verificar su identificación:
 
@@ -45,34 +66,23 @@ lsblk
 df -h
 ```
 
-Asumiendo que el USB es /dev/sdb1 con montaje en /mnt/usb:
+Asumiendo que el USB es `/dev/sdb1` con montaje en `/mnt/usb`:
 
 ```bash
 mount /dev/sdb1 /mnt/usb
 df -h /mnt/usb
 ```
 
-================================================================================
-
-PASO 2: INICIAR SESIÓN SCREEN (PROTEGE CONTRA CORTES SSH)
-================================================================================
+### 2️⃣ Iniciar sesión SCREEN (protege contra cortes SSH)
 
 ```bash
 screen -S backup_disco
 ```
 
-**Si se corta la conexión SSH**, volver a entrar con:
+> 💡 **Si se corta la conexión SSH:** `screen -r backup_disco` para reanudar  
+> 🔓 **Para salir de screen sin detener el proceso:** `Ctrl + A` , luego `D`
 
-```bash
-screen -r backup_disco
-```
-
-**Para salir de screen sin detener el proceso:** `Ctrl + A` , luego `D`
-
-================================================================================
-
-PASO 3: COPIAR EL DISCO COMPLETO SIN COMPRESIÓN
-================================================================================
+### 3️⃣ Copiar el disco completo SIN compresión
 
 **DENTRO de la sesión screen**, ejecutar:
 
@@ -100,13 +110,10 @@ watch -n 10 'kill -USR1 $(pgrep dd)'
 dd if=/dev/sda bs=4M | pv > /mnt/usb/disco_sistema.raw
 ```
 
-**Tamaño final esperado:** Igual al tamaño del disco origen (ej: 80 GB, 500 GB, etc.)
+**Tamaño final esperado:** Igual al tamaño del disco origen (ej: 80 GB, 500 GB, etc.)  
 **Tiempo estimado:** ~30-50 minutos por cada 100 GB (depende de la velocidad del USB)
 
-================================================================================
-
-PASO 4: MONITOREAR EL PROGRESO (DESDE OTRA TERMINAL SSH)
-================================================================================
+### 4️⃣ Monitorear el progreso (desde otra terminal SSH)
 
 **Ver el tamaño actual del archivo cada 10 segundos:**
 
@@ -132,10 +139,7 @@ screen -ls
 screen -r backup_disco
 ```
 
-================================================================================
-
-PASO 5: VERIFICAR EL BACKUP COMPLETADO
-================================================================================
+### 5️⃣ Verificar el backup completado
 
 Cuando el comando `dd` termine, verificar el tamaño del archivo:
 
@@ -151,10 +155,11 @@ sha256sum /mnt/usb/disco_sistema.raw > /mnt/usb/disco_sistema.sha256
 
 ================================================================================
 
-PASO 6: TRANSFERIR LA IMAGEN AL NODO PROXMOX
-================================================================================
+## ☁️ En el Nodo Proxmox (Destino)
 
-**Opción A: USB físico conectado directamente al Proxmox**
+### 6️⃣ Transferir la imagen al nodo Proxmox
+
+**Opción A: USB físico conectado directamente al Proxmox** (recomendada)
 
 ```bash
 # En el servidor Proxmox
@@ -164,7 +169,7 @@ cp /mnt/usb_backup/disco_sistema.raw /var/lib/vz/images/
 umount /mnt/usb_backup
 ```
 
-**Opción B: Transferencia por red con netcat (más rápida que scp)**
+**Opción B: Transferencia por red con netcat** (más rápida que scp)
 
 > ⚠️ **ADVERTENCIA:** `netcat` transmite los datos sin encriptar. Úsalo SOLO en redes de confianza (red local, VPN, etc.). Para Internet o redes inseguras, usa SCP.
 
@@ -181,16 +186,13 @@ nc <IP_DEL_PROXMOX> 9000 < disco_sistema.raw
 # Ctrl+A, D para salir
 ```
 
-**Opción C: SCP (lento pero seguro y sencillo)**
+**Opción C: SCP** (lento pero seguro y sencillo)
 
 ```bash
 scp /mnt/usb/disco_sistema.raw root@<IP_PROXMOX>:/var/lib/vz/images/
 ```
 
-================================================================================
-
-PASO 7: CREAR LA VM EN PROXMOX (SIN DISCO)
-================================================================================
+### 7️⃣ Crear la VM en Proxmox (SIN disco)
 
 ```bash
 # Crear la VM sin disco virtual
@@ -200,12 +202,9 @@ qm create 200 --name "servidor-migrado" --memory 4096 --cores 4 --bios seabios -
 qm config 200
 ```
 
-**Nota:** No crear disco durante la creación de la VM. El disco se importará en el siguiente paso.
+> **Nota:** No crear disco durante la creación de la VM. El disco se importará en el siguiente paso.
 
-================================================================================
-
-PASO 8: IMPORTAR Y CONVERTIR RAW → QCOW2 EN UN SOLO PASO
-================================================================================
+### 8️⃣ Importar y convertir RAW → QCOW2 en UN SOLO PASO
 
 **Este es el comando clave del método optimizado:**
 
@@ -221,12 +220,9 @@ qm importdisk 200 /var/lib/vz/images/disco_sistema.raw local --format qcow2
 
 **Tiempo estimado:** Similar al tiempo de copia original (~30-50 min por 100 GB)
 
-**Si el proceso se interrumpe,** ejecutar nuevamente el mismo comando (sobrescribe el disco importado)
+> **Si el proceso se interrumpe,** ejecutar nuevamente el mismo comando (sobrescribe el disco importado)
 
-================================================================================
-
-PASO 9: ATTACH EL DISCO A LA VM Y CONFIGURAR BOOT
-================================================================================
+### 9️⃣ Attach el disco a la VM y configurar boot
 
 ```bash
 # Verificar que el disco se importó (aparece como unused0)
@@ -248,10 +244,7 @@ qm set 200 --agent enabled=1
 qm set 200 --sata0 local:200/vm-200-disk-0.qcow2
 ```
 
-================================================================================
-
-PASO 10: INICIAR LA VM Y VERIFICAR
-================================================================================
+### 🔟 Iniciar la VM y verificar
 
 ```bash
 # Iniciar la VM
@@ -266,10 +259,9 @@ qm terminal 200
 
 ================================================================================
 
-PASO 11: CONFIGURACIÓN DENTRO DE LA VM (PRIMER ARRANQUE)
-================================================================================
+## 🔧 Configuración Post-Migración
 
-**Si la VM no arranca (error de root=UUID):**
+### Si la VM no arranca (error de root=UUID)
 
 1. En la consola de Proxmox, al ver el GRUB, presionar `e`
 2. Buscar la línea que comienza con `linux`
@@ -282,7 +274,7 @@ update-grub
 update-initramfs -u
 ```
 
-**Configurar la red (la interfaz puede cambiar de nombre):**
+### Configurar la red (la interfaz puede cambiar de nombre)
 
 ```bash
 # Verificar el nombre de la interfaz
@@ -292,7 +284,7 @@ ip addr show
 nano /etc/network/interfaces
 ```
 
-Ejemplo de configuración (Debian/Ubuntu):
+**Ejemplo de configuración (Debian/Ubuntu):**
 
 ```bash
 auto lo
@@ -306,27 +298,24 @@ iface ens18 inet static
     dns-nameservers 8.8.8.8
 ```
 
-**Instalar QEMU Guest Agent:**
+### Instalar QEMU Guest Agent
+
+**Para Debian/Ubuntu:**
 
 ```bash
 apt-get update
-apt-get install qemu-guest-agent
-systemctl enable qemu-guest-agent
-systemctl start qemu-guest-agent
+apt-get install qemu-guest-agent -y
+systemctl enable qemu-guest-agent --now
 ```
 
-**Para sistemas Red Hat/CentOS:**
+**Para Red Hat/CentOS:**
 
 ```bash
-yum install qemu-guest-agent
-systemctl enable qemu-guest-agent
-systemctl start qemu-guest-agent
+yum install qemu-guest-agent -y
+systemctl enable qemu-guest-agent --now
 ```
 
-================================================================================
-
-PASO 12: VERIFICACIÓN FINAL
-================================================================================
+### Verificación final
 
 Dentro de la VM migrada, verificar:
 
@@ -348,55 +337,18 @@ dmesg | grep -i error
 
 ================================================================================
 
-SOLUCIÓN DE PROBLEMAS COMUNES
-================================================================================
+## 🚨 Solución de Problemas Comunes
 
-**Problema 1: El proceso dd se interrumpió**
-
-```bash
-# Verificar si el archivo RAW tiene tamaño parcial
-ls -lh /mnt/usb/disco_sistema.raw
-
-# Reanudar dd con seek (omite lo ya copiado)
-dd if=/dev/sda bs=4M of=/mnt/usb/disco_sistema.raw seek=XX conv=notrunc
-# (XX = bloques ya copiados = tamaño_actual / 4M)
-```
-
-**Problema 2: La VM arranca pero no encuentra discos LVM**
-
-```bash
-# Dentro de la VM
-pvscan
-vgchange -ay
-mount /dev/mapper/vg0-root /mnt
-# Luego actualizar initramfs
-update-initramfs -u
-```
-
-**Problema 3: La interfaz de red cambió de eth0 a ens18**
-
-```bash
-# Solución 1: Renombrar interfaz en /etc/network/interfaces
-# Solución 2: Configurar GRUB para mantener nombres tradicionales
-echo 'GRUB_CMDLINE_LINUX="net.ifnames=0 biosdevname=0"' >> /etc/default/grub
-update-grub
-```
-
-**Problema 4: El disco RAW no cabe en el storage de Proxmox**
-
-```bash
-# Ver espacio disponible en Proxmox
-df -h /var/lib/vz/
-
-# Si no hay suficiente espacio, usar compresión post-backup
-gzip /var/lib/vz/images/disco_sistema.raw
-# Luego qm importdisk desde el .gz (más lento pero más pequeño)
-```
+| Problema | Solución |
+|----------|----------|
+| **El proceso dd se interrumpió** | `dd if=/dev/sda bs=4M of=/mnt/usb/disco_sistema.raw seek=XX conv=notrunc` (XX = bloques ya copiados = tamaño_actual / 4M) |
+| **La VM arranca pero no encuentra discos LVM** | Dentro de la VM: `pvscan && vgchange -ay && update-initramfs -u` |
+| **La interfaz de red cambió de eth0 a ens18** | Editar `/etc/network/interfaces` con el nuevo nombre o usar `net.ifnames=0` en GRUB |
+| **El disco RAW no cabe en el storage de Proxmox** | `gzip /var/lib/vz/images/disco_sistema.raw` y luego `qm importdisk` desde el `.gz` (más lento pero más pequeño) |
 
 ================================================================================
 
-RESUMEN DE COMANDOS ÚTILES PARA MONITOREO
-================================================================================
+## 📚 Comandos Rápidos para Monitoreo
 
 ```bash
 # Ver tamaños de backups
@@ -421,8 +373,18 @@ watch -n 10 'kill -USR1 $(pgrep dd)'
 # (tamaño_actual / velocidad_promedio)
 ```
 
+================================================================================
 
-## 📝 Autor
+## 📞 Contacto
 
-Carlos Silva  
-GitHub: [@Carlos-Silva-Sys](https://github.com/Carlos-Silva-Sys)
+**GitHub:** [Carlos-Silva-Sys](https://github.com/Carlos-Silva-Sys)  
+**Correo:** carlossilva32d@gmail.com
+
+================================================================================
+
+## 📄 Licencia
+
+MIT - Uso libre para fines educativos y profesionales.
+
+================================================================================
+```
