@@ -108,9 +108,6 @@ apt-get update && apt-get install qemu-guest-agent -y
 systemctl enable qemu-guest-agent --now
 ```
 
-## 📷 Capturas de pantalla
-
-> *[Aquí irían las capturas del proceso: pantalla de dd corriendo, qm importdisk, VM funcionando]*
 
 ## 👤 Autor
 
